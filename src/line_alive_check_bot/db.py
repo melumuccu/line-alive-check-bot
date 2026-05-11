@@ -120,5 +120,98 @@ def queue_due_check_ins(settings: Settings, scheduled_at: datetime) -> list[sqli
         return schedules
 
 
+def list_app_settings(settings: Settings) -> list[sqlite3.Row]:
+    with get_connection(settings) as connection:
+        return connection.execute(
+            """
+            SELECT key, value, updated_at
+            FROM app_settings
+            ORDER BY key ASC
+            """
+        ).fetchall()
+
+
+def get_app_setting(settings: Settings, key: str) -> sqlite3.Row | None:
+    with get_connection(settings) as connection:
+        return connection.execute(
+            """
+            SELECT key, value, updated_at
+            FROM app_settings
+            WHERE key = ?
+            """,
+            (key,),
+        ).fetchone()
+
+
+def create_app_setting(settings: Settings, key: str, value: str) -> sqlite3.Row:
+    now = datetime.now().isoformat(timespec="seconds")
+
+    with get_connection(settings) as connection:
+        connection.execute(
+            """
+            INSERT INTO app_settings(key, value, updated_at)
+            VALUES(?, ?, ?)
+            """,
+            (key, value, now),
+        )
+        setting = connection.execute(
+            """
+            SELECT key, value, updated_at
+            FROM app_settings
+            WHERE key = ?
+            """,
+            (key,),
+        ).fetchone()
+        connection.commit()
+
+    if setting is None:
+        raise RuntimeError(f"failed to create app setting: {key}")
+
+    return setting
+
+
+def update_app_setting(settings: Settings, key: str, value: str) -> sqlite3.Row | None:
+    now = datetime.now().isoformat(timespec="seconds")
+
+    with get_connection(settings) as connection:
+        updated = connection.execute(
+            """
+            UPDATE app_settings
+            SET value = ?, updated_at = ?
+            WHERE key = ?
+            """,
+            (value, now, key),
+        )
+        if updated.rowcount == 0:
+            connection.commit()
+            return None
+
+        setting = connection.execute(
+            """
+            SELECT key, value, updated_at
+            FROM app_settings
+            WHERE key = ?
+            """,
+            (key,),
+        ).fetchone()
+        connection.commit()
+
+    return setting
+
+
+def delete_app_setting(settings: Settings, key: str) -> bool:
+    with get_connection(settings) as connection:
+        deleted = connection.execute(
+            """
+            DELETE FROM app_settings
+            WHERE key = ?
+            """,
+            (key,),
+        )
+        connection.commit()
+
+    return deleted.rowcount > 0
+
+
 def database_exists(settings: Settings) -> bool:
     return settings.database_path.exists()
