@@ -22,18 +22,53 @@
 
 ## Slack 設定
 
-- [ ] 管理者通知用の Slack チャンネルを作成する。
-- [ ] Slack Incoming Webhook を作成し、通知先チャンネルを紐付ける。
-- [ ] 発行された Webhook URL を安全な場所に保管する。
+- [x] 管理者通知用の Slack チャンネルを作成する。
+- [x] Slack Incoming Webhook を作成し、通知先チャンネルを紐付ける。
+- [x] 発行された Webhook URL を安全な場所に保管する。
 - [ ] 通知文面の受け取り先とメンション方針を決める。必要なら専用チャンネルに集約する。
 
 ## Cloudflare Tunnel 設定
 
-- [ ] Cloudflare アカウントを用意する。
-- [ ] Tunnel を作成し、対象サーバーへ接続するための認証情報を取得する。
-- [ ] Tunnel 作成後に発行される公開 URL を確認し、Webhook 用の URL として控える。
-- [ ] Tunnel から api コンテナの HTTP ポートへ転送する設定を作る。
+- [x] Cloudflare アカウントを用意する。
+- [x] Tunnel を作成し、対象サーバーへ接続するための認証情報を取得する。
+- [x] Tunnel 作成後に発行される公開 URL を確認し、Webhook 用の URL として控える。
+- [x] Tunnel から api コンテナの HTTP ポートへ転送する設定を作る。
 - [ ] 外部から /webhook へ到達できることを確認する。
+- [x] 外部から /healthz へ到達できることを確認する。公開経路の基礎疎通確認として実施する。
+
+### Cloudflare 作業メモ
+
+#### ここまでに実施した手順
+
+1. Cloudflare Zero Trust で Tunnel を作成する。
+1. Public Hostname に `alive-bot.hacksaw.work` を設定する。
+1. Service URL に `http://api:8000` を設定する。`cloudflared` を Docker Compose に組み込んでいるため、`localhost` ではなく Compose のサービス名を使う。
+1. `.env` に `CLOUDFLARE_TUNNEL_TOKEN` を設定する。
+1. 次のコマンドで `cloudflared` を含む Compose を起動する。
+
+```sh
+docker compose up -d --build
+```
+
+1. 次のコマンドで公開経路の基礎疎通を確認する。
+
+```sh
+curl https://alive-bot.hacksaw.work/healthz
+```
+
+1. `{"status":"ok"}` を含む応答が返ることを確認する。
+
+#### 以降の手順
+
+1. Cloudflare Tunnel token を rotate する。過去にシェルへ直打ちした token は使い続けない。
+1. API に `POST /webhook` を実装した状態をデプロイする。
+1. 外部から `https://alive-bot.hacksaw.work/webhook` へ到達できることを確認する。
+1. LINE Developers で Channel Access Token を発行し、安全な場所に保管する。
+1. LINE Developers の Webhook URL に `https://alive-bot.hacksaw.work/webhook` を設定する。
+1. Webhook の利用を有効化する。
+1. LINE Developers の Webhook 検証を実行し、成功することを確認する。
+1. Slack 通知文面、初期の送信時刻、`alert_after_hours`、本番用の環境変数一覧を確定する。
+1. 初回疎通確認の 4 項目を順に実施する。
 
 ## 本番設定値の確定
 
