@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: .
+    command:
+      - uvicorn
+      - line_alive_check_bot.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment: &app-environment
+      APP_DATABASE_PATH: /data/app.db
+      APP_DEFAULT_ALERT_AFTER_HOURS: "3"
+      APP_DEFAULT_SCHEDULE_TIMES: 09:00,12:00,18:00
+      APP_SCHEDULER_POLL_SECONDS: "60"
+      APP_TIMEZONE: Asia/Tokyo
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz').read()
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    ports:
+      - 8000:8000
+    volumes:
+      - sqlite_data:/data
+
+  scheduler:
+    build:
+      context: .
+    command:
+      - python
+      - -m
+      - line_alive_check_bot.scheduler
+    environment: *app-environment
+    volumes:
+      - sqlite_data:/data
+
+volumes:
+  sqlite_data:
