@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from line_alive_check_bot import db
 from line_alive_check_bot.config import Settings
 from line_alive_check_bot.main import (
+    list_check_ins,
     create_message_schedule,
     delete_message_schedule,
     get_message_schedule,
@@ -73,6 +74,56 @@ class MessageSchedulesApiTestCase(unittest.TestCase):
                 get_message_schedule(schedule_id)
 
             self.assertEqual(context.exception.status_code, 404)
+
+
+class CheckInsApiTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary_directory = TemporaryDirectory()
+        self.addCleanup(self.temporary_directory.cleanup)
+        self.settings = Settings(database_path=Path(self.temporary_directory.name) / "app.db")
+        db.init_db(self.settings)
+
+    def test_list_check_ins_returns_latest_history_first(self) -> None:
+        with db.get_connection(self.settings) as connection:
+            connection.execute(
+                """
+                INSERT INTO check_ins(schedule_id, scheduled_at, sent_at, replied_at, status)
+                VALUES(?, ?, ?, ?, ?)
+                """,
+                (
+                    1,
+                    "2026-05-11T09:00",
+                    "2026-05-11T09:00:10",
+                    None,
+                    "pending",
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO check_ins(schedule_id, scheduled_at, sent_at, replied_at, status)
+                VALUES(?, ?, ?, ?, ?)
+                """,
+                (
+                    2,
+                    "2026-05-11T12:00",
+                    "2026-05-11T12:00:05",
+                    "2026-05-11T12:03:00",
+                    "success",
+                ),
+            )
+            connection.commit()
+
+        with patch("line_alive_check_bot.main.get_settings", return_value=self.settings):
+            history = list_check_ins()
+
+        self.assertEqual(len(history), 2)
+        self.assertEqual(history[0].schedule_id, 2)
+        self.assertEqual(history[0].schedule_label, "昼")
+        self.assertEqual(history[0].schedule_time_of_day, "12:00")
+        self.assertEqual(history[0].status, "success")
+        self.assertEqual(history[1].schedule_id, 1)
+        self.assertEqual(history[1].schedule_label, "朝")
+        self.assertEqual(history[1].status, "pending")
 
 
 class MessageSchedulesValidationApiTestCase(unittest.TestCase):

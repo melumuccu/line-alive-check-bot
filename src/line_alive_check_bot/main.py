@@ -59,6 +59,17 @@ class AppSettingUpdateRequest(BaseModel):
     value: str = Field(min_length=1)
 
 
+class CheckInResponse(BaseModel):
+    id: int
+    schedule_id: int
+    schedule_label: str
+    schedule_time_of_day: str
+    scheduled_at: str
+    sent_at: str | None
+    replied_at: str | None
+    status: str
+
+
 def serialize_message_schedule(schedule: sqlite3.Row) -> MessageScheduleResponse:
     return MessageScheduleResponse(
         id=schedule["id"],
@@ -75,6 +86,19 @@ def serialize_app_setting(setting: sqlite3.Row) -> AppSettingResponse:
         key=setting["key"],
         value=setting["value"],
         updated_at=setting["updated_at"],
+    )
+
+
+def serialize_check_in(check_in: sqlite3.Row) -> CheckInResponse:
+    return CheckInResponse(
+        id=check_in["id"],
+        schedule_id=check_in["schedule_id"],
+        schedule_label=check_in["schedule_label"],
+        schedule_time_of_day=check_in["schedule_time_of_day"],
+        scheduled_at=check_in["scheduled_at"],
+        sent_at=check_in["sent_at"],
+        replied_at=check_in["replied_at"],
+        status=check_in["status"],
     )
 
 
@@ -201,6 +225,13 @@ def healthcheck() -> dict[str, object]:
         "database_path": str(current_settings.database_path),
         "timezone": current_settings.timezone,
     }
+
+
+@app.get("/admin/check-ins", response_model=list[CheckInResponse])
+def list_check_ins() -> list[CheckInResponse]:
+    current_settings = get_settings()
+    check_ins = db.list_check_ins(current_settings)
+    return [serialize_check_in(check_in) for check_in in check_ins]
 
 
 @app.get("/admin/message-schedules", response_model=list[MessageScheduleResponse])

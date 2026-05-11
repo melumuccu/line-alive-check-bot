@@ -120,6 +120,26 @@ def queue_due_check_ins(settings: Settings, scheduled_at: datetime) -> list[sqli
         return schedules
 
 
+def list_check_ins(settings: Settings) -> list[sqlite3.Row]:
+    with get_connection(settings) as connection:
+        return connection.execute(
+            """
+            SELECT
+                check_ins.id,
+                check_ins.schedule_id,
+                message_schedules.label AS schedule_label,
+                message_schedules.time_of_day AS schedule_time_of_day,
+                check_ins.scheduled_at,
+                check_ins.sent_at,
+                check_ins.replied_at,
+                check_ins.status
+            FROM check_ins
+            INNER JOIN message_schedules ON message_schedules.id = check_ins.schedule_id
+            ORDER BY check_ins.scheduled_at DESC, check_ins.id DESC
+            """
+        ).fetchall()
+
+
 def list_message_schedules(settings: Settings) -> list[sqlite3.Row]:
     with get_connection(settings) as connection:
         return connection.execute(
