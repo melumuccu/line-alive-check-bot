@@ -1,0 +1,46 @@
+[tools]
+python = "3.12"
+node = "22"
+pnpm = "10.11.0"
+
+[tasks.install]
+description = "Install backend and workspace dependencies"
+run = """
+python -m pip install --upgrade pip
+python -m pip install -e . pre-commit
+pnpm install
+"""
+
+[tasks.dev-api]
+description = "Run FastAPI app"
+run = "uvicorn line_alive_check_bot.main:app --reload --host 0.0.0.0 --port 8000"
+
+[tasks.dev-scheduler]
+description = "Run scheduler worker"
+run = "python -m line_alive_check_bot.scheduler"
+
+[tasks.check]
+description = "Run lightweight static checks"
+run = """
+python -m compileall src
+if [ -d apps/web ]; then
+  pnpm --filter web check
+fi
+"""
+
+[tasks.test]
+description = "Run tests when available"
+run = """
+if [ -d tests ]; then
+  python -m pytest
+else
+  echo 'No backend tests yet'
+fi
+if [ -d apps/web ]; then
+  pnpm --filter web test
+fi
+"""
+
+[tasks.build]
+description = "Build runtime containers"
+run = "docker compose build"

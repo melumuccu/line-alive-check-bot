@@ -2,9 +2,9 @@
 
 ## 事前準備
 
-- [ ] 自宅サーバーの設置場所と常時稼働方針を決める。停電時の扱いも確認する。
-- [ ] 自宅サーバーに Docker と Docker Compose をインストールする。
-- [ ] 公開に使うドメインを決める。Cloudflare 管理下のドメインか、Cloudflare Tunnel の発行 URL を使うかを決める。
+- [x] 自宅サーバーの設置場所と常時稼働方針を決める。停電時の扱いも確認する。
+- [x] 自宅サーバーに Docker と Docker Compose をインストールする。
+- [x] 公開に使う URL 方針を決める。Cloudflare Tunnel の発行 URL を使う。
 
 ## LINE Bot 設定
 
@@ -31,34 +31,24 @@
 
 - [ ] Cloudflare アカウントを用意する。
 - [ ] Tunnel を作成し、対象サーバーへ接続するための認証情報を取得する。
-- [ ] 公開ホスト名を決める。例: alive-check.example.com
+- [ ] Tunnel 作成後に発行される公開 URL を確認し、Webhook 用の URL として控える。
 - [ ] Tunnel から api コンテナの HTTP ポートへ転送する設定を作る。
-- [ ] 外部から /health と /webhook へ到達できることを確認する。
+- [ ] 外部から /webhook へ到達できることを確認する。
 
 ## 本番設定値の確定
 
 - [ ] 初期の送信時刻を決める。例: 09:00、12:00、18:00。
 - [ ] alert_after_hours の初期値を決める。例: 3。
 - [ ] Slack 通知先チャンネルを確定する。
-- [ ] ヘルスチェック URL を確定する。例: https://<公開ホスト名>/health
+- [ ] Webhook 公開 URL を確定する。Cloudflare Tunnel の発行 URL に /webhook を付与した値を使う。
 - [ ] 本番用の環境変数一覧を埋める。少なくとも LINE の認証情報、Slack Webhook URL、公開 URL、タイムゾーンを整理する。
-
-## GitHub Actions 設定
-
-- [ ] GitHub リポジトリを用意する。
-- [ ] Actions を有効にする。
-- [ ] Repository Secrets にヘルスチェック先 URL を登録する。
-- [ ] Repository Secrets に Slack 通知用の値を登録する。
-- [ ] schedule 実行が有効なことを確認する。
 
 ## 初回疎通確認
 
-- [ ] 本番公開 URL に対して /health が 200 を返すことを確認する。
 - [ ] LINE Developers の Webhook 検証を実行し、成功することを確認する。
 - [ ] 手動で安否確認メッセージを送信し、対象者の LINE に届くことを確認する。
 - [ ] ボタン押下後に success へ更新され、確認メッセージが返ることを確認する。
 - [ ] 未返信状態を意図的に作り、Slack にアラートが届くことを確認する。
-- [ ] GitHub Actions の死活監視を手動実行し、異常時に Slack 通知が届くことを確認する。
 
 ## 運用開始前の確認
 

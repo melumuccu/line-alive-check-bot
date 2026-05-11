@@ -6,6 +6,9 @@ from pathlib import Path
 
 from .config import Settings
 
+BOOTSTRAP_ALERT_AFTER_HOURS = 3
+BOOTSTRAP_SCHEDULE_TIMES = ("09:00", "12:00", "18:00")
+
 CHECK_INS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS check_ins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,10 +72,10 @@ def init_db(settings: Settings) -> None:
             INSERT OR IGNORE INTO app_settings(key, value, updated_at)
             VALUES(?, ?, ?)
             """,
-            ("alert_after_hours", str(settings.default_alert_after_hours), now),
+            ("alert_after_hours", str(BOOTSTRAP_ALERT_AFTER_HOURS), now),
         )
 
-        for index, time_of_day in enumerate(settings.schedule_times, start=1):
+        for index, time_of_day in enumerate(BOOTSTRAP_SCHEDULE_TIMES, start=1):
             connection.execute(
                 """
                 INSERT OR IGNORE INTO message_schedules(label, time_of_day, days_of_week, is_active, updated_at)
