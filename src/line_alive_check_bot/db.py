@@ -95,6 +95,7 @@ def default_schedule_label(index: int) -> str:
 def queue_due_check_ins(settings: Settings, scheduled_at: datetime) -> list[sqlite3.Row]:
     scheduled_time = scheduled_at.strftime("%H:%M")
     scheduled_at_iso = scheduled_at.isoformat(timespec="minutes")
+    queued_check_ins: list[sqlite3.Row] = []
 
     with get_connection(settings) as connection:
         schedules = connection.execute(
@@ -108,7 +109,7 @@ def queue_due_check_ins(settings: Settings, scheduled_at: datetime) -> list[sqli
         ).fetchall()
 
         for schedule in schedules:
-            connection.execute(
+            inserted = connection.execute(
                 """
                 INSERT OR IGNORE INTO check_ins(schedule_id, scheduled_at, status)
                 VALUES(?, ?, 'pending')
@@ -116,8 +117,50 @@ def queue_due_check_ins(settings: Settings, scheduled_at: datetime) -> list[sqli
                 (schedule["id"], scheduled_at_iso),
             )
 
+            if inserted.rowcount == 0:
+                continue
+
+            check_in = connection.execute(
+                """
+                SELECT
+                    check_ins.id,
+                    check_ins.schedule_id,
+                    message_schedules.label AS schedule_label,
+                    message_schedules.time_of_day AS schedule_time_of_day,
+                    check_ins.scheduled_at,
+                    check_ins.sent_at,
+                    check_ins.replied_at,
+                    check_ins.status
+                FROM check_ins
+                INNER JOIN message_schedules ON message_schedules.id = check_ins.schedule_id
+                WHERE check_ins.id = ?
+                """,
+                (inserted.lastrowid,),
+            ).fetchone()
+            if check_in is None:
+                raise RuntimeError(f"failed to queue check-in for schedule_id={schedule['id']}")
+
+            queued_check_ins.append(check_in)
+
         connection.commit()
-        return schedules
+        return queued_check_ins
+
+
+def mark_check_in_sent(settings: Settings, check_in_id: int, sent_at: datetime) -> bool:
+    sent_at_iso = sent_at.isoformat(timespec="seconds")
+
+    with get_connection(settings) as connection:
+        updated = connection.execute(
+            """
+            UPDATE check_ins
+            SET sent_at = ?
+            WHERE id = ? AND sent_at IS NULL
+            """,
+            (sent_at_iso, check_in_id),
+        )
+        connection.commit()
+
+    return updated.rowcount > 0
 
 
 def list_check_ins(settings: Settings) -> list[sqlite3.Row]:

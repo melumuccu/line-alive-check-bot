@@ -6,8 +6,13 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from . import db
 from .config import get_settings
-from .db import init_db, queue_due_check_ins
+from .line_messaging import (
+    LineMessagingConfigurationError,
+    LineMessagingError,
+    send_check_in_message,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,13 +23,35 @@ logger = logging.getLogger(__name__)
 
 def run_once() -> int:
     settings = get_settings()
-    init_db(settings)
+    db.init_db(settings)
 
     now = datetime.now(ZoneInfo(settings.timezone)).replace(second=0, microsecond=0)
-    queued = queue_due_check_ins(settings, now)
+    queued_check_ins = db.queue_due_check_ins(settings, now)
+    sent_count = 0
 
-    logger.info("checked %s due schedules at %s", len(queued), now.isoformat(timespec="minutes"))
-    return len(queued)
+    for check_in in queued_check_ins:
+        check_in_id = check_in["id"]
+
+        try:
+            send_check_in_message(settings, check_in)
+        except LineMessagingConfigurationError as exc:
+            logger.warning("skipped LINE push for check_in_id=%s: %s", check_in_id, exc)
+            continue
+        except LineMessagingError:
+            logger.exception("failed to send LINE push for check_in_id=%s", check_in_id)
+            continue
+
+        sent_at = datetime.now(ZoneInfo(settings.timezone)).replace(microsecond=0)
+        db.mark_check_in_sent(settings, check_in_id, sent_at)
+        sent_count += 1
+
+    logger.info(
+        "processed %s due check-ins and sent %s LINE messages at %s",
+        len(queued_check_ins),
+        sent_count,
+        now.isoformat(timespec="minutes"),
+    )
+    return sent_count
 
 
 def run_forever() -> None:

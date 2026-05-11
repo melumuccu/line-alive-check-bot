@@ -23,7 +23,8 @@ class QueueDueCheckInsTestCase(unittest.TestCase):
         second_batch = db.queue_due_check_ins(self.settings, scheduled_at)
 
         self.assertEqual(len(first_batch), 1)
-        self.assertEqual(first_batch[0]["time_of_day"], "09:00")
+        self.assertEqual(first_batch[0]["schedule_time_of_day"], "09:00")
+        self.assertEqual(first_batch[0]["schedule_label"], "朝")
         self.assertEqual(second_batch, [])
 
         with db.get_connection(self.settings) as connection:

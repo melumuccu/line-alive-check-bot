@@ -9,6 +9,9 @@ class Settings(BaseSettings):
 
     app_name: str = "line-alive-check-bot"
     database_path: Path = Path("/data/app.db")
+    line_api_base_url: str = "https://api.line.me"
+    line_channel_access_token: str | None = None
+    line_user_id: str | None = None
     scheduler_poll_seconds: int = 60
     timezone: str = "Asia/Tokyo"
 
