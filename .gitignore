@@ -7,4 +7,4 @@ data/
 *.db
 node_modules/
 .pnpm-store/
-
+*.egg-info/

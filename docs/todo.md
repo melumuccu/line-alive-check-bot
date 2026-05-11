@@ -13,7 +13,7 @@
 - [ ] message_schedules の CRUD を提供する管理用 API を実装する。将来 GUI から更新できる前提を作る。
 - [x] app_settings の CRUD を提供する管理用 API を実装する。アラート閾値を更新できるようにする。
 - [x] scheduler ワーカーを実装する。1分ごとに JST で現在時刻を判定し、daily の有効スケジュールを処理する。
-- [ ] 重複送信防止を実装する。同一 schedule_id と同一日付で check_ins を重複作成しないようにする。
+- [x] 重複送信防止を実装する。同一 schedule_id と同一日付で check_ins を重複作成しないようにする。
 - [ ] LINE メッセージ送信処理を実装する。Flex Message と postback データを組み立てて送信する。
 - [ ] POST /webhook を実装する。X-Line-Signature の検証と postback 受信を行う。
 - [ ] 返信処理を実装する。対象 check_ins を success に更新し、確認メッセージを返す。

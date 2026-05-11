@@ -8,17 +8,17 @@
 
 ## LINE Bot 設定
 
-- [ ] LINE Developers コンソールで Provider を作成する。
-- [ ] Provider 配下に Messaging API チャネルを作成する。
-- [ ] LINE Official Account を作成し、作成した Messaging API チャネルと紐付ける。
-- [ ] チャネル基本設定から Channel Secret を取得し、安全な場所に保管する。
+- [x] LINE Developers コンソールで Provider を作成する。
+- [x] Provider 配下に Messaging API チャネルを作成する。
+- [x] LINE Official Account を作成し、作成した Messaging API チャネルと紐付ける。
+- [x] チャネル基本設定から Channel Secret を取得し、安全な場所に保管する。
 - [ ] Messaging API 設定から Channel Access Token を発行し、安全な場所に保管する。
 - [ ] Webhook URL に本番公開 URL の /webhook を設定する。
 - [ ] Webhook の利用を有効化する。
-- [ ] 応答メッセージを無効化する。Bot 独自実装の返信と競合させない。
-- [ ] あいさつメッセージを無効化する。不要な自動送信を避ける。
-- [ ] 対象者の LINE アカウントで Bot を友だち追加し、メッセージ受信ができることを確認する。
-- [ ] 管理者自身の LINE アカウントでも Bot を友だち追加し、必要ならテスト受信に使えるようにする。
+- [x] 応答メッセージを無効化する。Bot 独自実装の返信と競合させない。
+- [x] あいさつメッセージを無効化する。不要な自動送信を避ける。
+- [x] 対象者の LINE アカウントで Bot を友だち追加し、メッセージ受信ができることを確認する。
+- [x] 管理者自身の LINE アカウントでも Bot を友だち追加し、必要ならテスト受信に使えるようにする。
 
 ## Slack 設定
 
