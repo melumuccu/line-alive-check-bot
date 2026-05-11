@@ -10,7 +10,7 @@
 - [x] アプリ共通基盤を作る。環境変数読み込み、設定管理、ログ出力を実装する。
 - [x] SQLite の初期スキーマを作る。check_ins、message_schedules、app_settings を作成する。
 - [x] 初期データ投入処理を作る。alert_after_hours とサンプルの daily スケジュールを登録できるようにする。
-- [ ] message_schedules の CRUD を提供する管理用 API を実装する。将来 GUI から更新できる前提を作る。
+- [x] message_schedules の CRUD を提供する管理用 API を実装する。将来 GUI から更新できる前提を作る。
 - [x] app_settings の CRUD を提供する管理用 API を実装する。アラート閾値を更新できるようにする。
 - [x] scheduler ワーカーを実装する。1分ごとに JST で現在時刻を判定し、daily の有効スケジュールを処理する。
 - [x] 重複送信防止を実装する。同一 schedule_id と同一日付で check_ins を重複作成しないようにする。

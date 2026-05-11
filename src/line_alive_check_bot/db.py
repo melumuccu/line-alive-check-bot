@@ -120,6 +120,112 @@ def queue_due_check_ins(settings: Settings, scheduled_at: datetime) -> list[sqli
         return schedules
 
 
+def list_message_schedules(settings: Settings) -> list[sqlite3.Row]:
+    with get_connection(settings) as connection:
+        return connection.execute(
+            """
+            SELECT id, label, time_of_day, days_of_week, is_active, updated_at
+            FROM message_schedules
+            ORDER BY time_of_day ASC, id ASC
+            """
+        ).fetchall()
+
+
+def get_message_schedule(settings: Settings, schedule_id: int) -> sqlite3.Row | None:
+    with get_connection(settings) as connection:
+        return connection.execute(
+            """
+            SELECT id, label, time_of_day, days_of_week, is_active, updated_at
+            FROM message_schedules
+            WHERE id = ?
+            """,
+            (schedule_id,),
+        ).fetchone()
+
+
+def create_message_schedule(
+    settings: Settings,
+    label: str,
+    time_of_day: str,
+    days_of_week: str,
+    is_active: bool,
+) -> sqlite3.Row:
+    now = datetime.now().isoformat(timespec="seconds")
+
+    with get_connection(settings) as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO message_schedules(label, time_of_day, days_of_week, is_active, updated_at)
+            VALUES(?, ?, ?, ?, ?)
+            """,
+            (label, time_of_day, days_of_week, int(is_active), now),
+        )
+        schedule = connection.execute(
+            """
+            SELECT id, label, time_of_day, days_of_week, is_active, updated_at
+            FROM message_schedules
+            WHERE id = ?
+            """,
+            (cursor.lastrowid,),
+        ).fetchone()
+        connection.commit()
+
+    if schedule is None:
+        raise RuntimeError(f"failed to create message schedule: {label}")
+
+    return schedule
+
+
+def update_message_schedule(
+    settings: Settings,
+    schedule_id: int,
+    label: str,
+    time_of_day: str,
+    days_of_week: str,
+    is_active: bool,
+) -> sqlite3.Row | None:
+    now = datetime.now().isoformat(timespec="seconds")
+
+    with get_connection(settings) as connection:
+        updated = connection.execute(
+            """
+            UPDATE message_schedules
+            SET label = ?, time_of_day = ?, days_of_week = ?, is_active = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (label, time_of_day, days_of_week, int(is_active), now, schedule_id),
+        )
+        if updated.rowcount == 0:
+            connection.commit()
+            return None
+
+        schedule = connection.execute(
+            """
+            SELECT id, label, time_of_day, days_of_week, is_active, updated_at
+            FROM message_schedules
+            WHERE id = ?
+            """,
+            (schedule_id,),
+        ).fetchone()
+        connection.commit()
+
+    return schedule
+
+
+def delete_message_schedule(settings: Settings, schedule_id: int) -> bool:
+    with get_connection(settings) as connection:
+        deleted = connection.execute(
+            """
+            DELETE FROM message_schedules
+            WHERE id = ?
+            """,
+            (schedule_id,),
+        )
+        connection.commit()
+
+    return deleted.rowcount > 0
+
+
 def list_app_settings(settings: Settings) -> list[sqlite3.Row]:
     with get_connection(settings) as connection:
         return connection.execute(
