@@ -25,7 +25,7 @@
 - [x] 管理者通知用の Slack チャンネルを作成する。
 - [x] Slack Incoming Webhook を作成し、通知先チャンネルを紐付ける。
 - [x] 発行された Webhook URL を安全な場所に保管する。
-- [ ] 通知文面の受け取り先とメンション方針を決める。必要なら専用チャンネルに集約する。
+- [x] 通知文面の受け取り先とメンション方針を決める。通知先は alive-bot、メンション無しとする。
 
 ## Cloudflare Tunnel 設定
 
@@ -67,16 +67,16 @@ curl https://alive-bot.hacksaw.work/healthz
 - [x] LINE Developers の Webhook URL に `https://alive-bot.hacksaw.work/webhook` を設定する。
 - [x] Webhook の利用を有効化する。
 - [x] LINE Developers の Webhook 検証を実行し、成功することを確認する。
-- [ ] Slack 通知文面、初期の送信時刻、`alert_after_hours`、本番用の環境変数一覧を確定する。
+- [x] Slack 通知文面を確定する。`反応がありません。確認連絡を推奨します。` のテキストのみとする。
 - [ ] 初回疎通確認の 4 項目を順に実施する。
 
 ## 本番設定値の確定
 
-- [ ] 初期の送信時刻を決める。例: 09:00、12:00、18:00。
-- [ ] alert_after_hours の初期値を決める。例: 3。
-- [ ] Slack 通知先チャンネルを確定する。
+- [x] 初期の送信時刻を決める。08:00、14:00、20:00 とする。
+- [x] alert_after_hours の初期値を決める。2 とする。
+- [x] Slack 通知先チャンネルを確定する。alive-bot とする。
 - [x] Webhook 公開 URL を確定する。Cloudflare Tunnel の発行 URL に /webhook を付与した値を使う。
-- [ ] 本番用の環境変数一覧を埋める。少なくとも LINE の認証情報、Slack Webhook URL、公開 URL、タイムゾーンを整理する。
+- [x] 本番用の環境変数一覧を埋める。.env.example を基準にし、実値は .env とパスワードマネージャで管理する。
 
 ## 初回疎通確認
 

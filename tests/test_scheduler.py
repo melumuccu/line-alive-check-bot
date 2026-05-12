@@ -34,7 +34,7 @@ class SchedulerMessageDispatchTestCase(unittest.TestCase):
         db.init_db(self.settings)
 
     def test_run_once_sends_new_check_in_and_marks_sent_at(self) -> None:
-        FrozenDateTime.current = datetime(2026, 5, 11, 9, 0, tzinfo=ZoneInfo("Asia/Tokyo"))
+        FrozenDateTime.current = datetime(2026, 5, 11, 8, 0, tzinfo=ZoneInfo("Asia/Tokyo"))
 
         with (
             patch("line_alive_check_bot.scheduler.get_settings", return_value=self.settings),
@@ -76,15 +76,15 @@ class SchedulerMessageDispatchTestCase(unittest.TestCase):
                 """,
                 (
                     1,
-                    "2026-05-11T09:00",
-                    "2026-05-11T09:00:00",
+                    "2026-05-11T08:00",
+                    "2026-05-11T08:00:00",
                     None,
                     "pending",
                 ),
             )
             connection.commit()
 
-        FrozenDateTime.current = datetime(2026, 5, 11, 12, 1, tzinfo=ZoneInfo("Asia/Tokyo"))
+        FrozenDateTime.current = datetime(2026, 5, 11, 10, 1, tzinfo=ZoneInfo("Asia/Tokyo"))
 
         with (
             patch("line_alive_check_bot.scheduler.get_settings", return_value=self.settings),

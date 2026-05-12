@@ -125,8 +125,8 @@ class CheckInsApiTestCase(unittest.TestCase):
                 """,
                 (
                     1,
-                    "2026-05-11T09:00",
-                    "2026-05-11T09:00:10",
+                    "2026-05-11T08:00",
+                    "2026-05-11T08:00:10",
                     None,
                     "pending",
                 ),
@@ -138,8 +138,8 @@ class CheckInsApiTestCase(unittest.TestCase):
                 """,
                 (
                     2,
-                    "2026-05-11T12:00",
-                    "2026-05-11T12:00:05",
+                    "2026-05-11T14:00",
+                    "2026-05-11T14:00:05",
                     "2026-05-11T12:03:00",
                     "success",
                 ),
@@ -152,7 +152,7 @@ class CheckInsApiTestCase(unittest.TestCase):
         self.assertEqual(len(history), 2)
         self.assertEqual(history[0].schedule_id, 2)
         self.assertEqual(history[0].schedule_label, "昼")
-        self.assertEqual(history[0].schedule_time_of_day, "12:00")
+        self.assertEqual(history[0].schedule_time_of_day, "14:00")
         self.assertEqual(history[0].status, "success")
         self.assertEqual(history[1].schedule_id, 1)
         self.assertEqual(history[1].schedule_label, "朝")
@@ -201,8 +201,8 @@ class WebhookApiTestCase(unittest.TestCase):
                 (
                     42,
                     1,
-                    "2026-05-11T09:00",
-                    "2026-05-11T09:00:05",
+                    "2026-05-11T08:00",
+                    "2026-05-11T08:00:05",
                     None,
                     "pending",
                 ),

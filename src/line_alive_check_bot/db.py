@@ -6,8 +6,8 @@ from pathlib import Path
 
 from .config import Settings
 
-BOOTSTRAP_ALERT_AFTER_HOURS = 3
-BOOTSTRAP_SCHEDULE_TIMES = ("09:00", "12:00", "18:00")
+BOOTSTRAP_ALERT_AFTER_HOURS = 2
+BOOTSTRAP_SCHEDULE_TIMES = ("08:00", "14:00", "20:00")
 
 CHECK_INS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS check_ins (
@@ -75,14 +75,22 @@ def init_db(settings: Settings) -> None:
             ("alert_after_hours", str(BOOTSTRAP_ALERT_AFTER_HOURS), now),
         )
 
-        for index, time_of_day in enumerate(BOOTSTRAP_SCHEDULE_TIMES, start=1):
-            connection.execute(
-                """
-                INSERT OR IGNORE INTO message_schedules(label, time_of_day, days_of_week, is_active, updated_at)
-                VALUES(?, ?, 'daily', 1, ?)
-                """,
-                (default_schedule_label(index), time_of_day, now),
-            )
+        schedule_count = connection.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM message_schedules
+            """
+        ).fetchone()["count"]
+
+        if schedule_count == 0:
+            for index, time_of_day in enumerate(BOOTSTRAP_SCHEDULE_TIMES, start=1):
+                connection.execute(
+                    """
+                    INSERT OR IGNORE INTO message_schedules(label, time_of_day, days_of_week, is_active, updated_at)
+                    VALUES(?, ?, 'daily', 1, ?)
+                    """,
+                    (default_schedule_label(index), time_of_day, now),
+                )
 
         connection.commit()
 
