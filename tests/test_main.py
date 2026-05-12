@@ -217,6 +217,37 @@ class WebhookApiTestCase(unittest.TestCase):
         self.assertEqual(response.events_received, 1)
         self.assertEqual(response.postback_events_received, 1)
 
+    def test_receive_webhook_logs_event_type_and_source_user_id(self) -> None:
+        body = json.dumps(
+            {
+                "destination": "U1234567890",
+                "events": [
+                    {
+                        "type": "message",
+                        "replyToken": "reply-token",
+                        "timestamp": 1715500000000,
+                        "source": {"type": "user", "userId": "U1234567890"},
+                        "message": {"type": "text", "text": "hello"},
+                    }
+                ],
+            }
+        ).encode("utf-8")
+        signature = build_line_signature(self.settings.line_channel_secret or "", body)
+
+        with (
+            patch("line_alive_check_bot.main.get_settings", return_value=self.settings),
+            patch("line_alive_check_bot.main.logger") as mock_logger,
+        ):
+            response = asyncio.run(receive_webhook(build_request(body), signature))
+
+        self.assertTrue(response.ok)
+        mock_logger.info.assert_called_once_with(
+            "received LINE webhook event type=%s source_type=%s source_user_id=%s",
+            "message",
+            "user",
+            "U1234567890",
+        )
+
     def test_receive_webhook_accepts_valid_verification_request(self) -> None:
         body = json.dumps(
             {

@@ -34,7 +34,7 @@
 - [x] Tunnel 作成後に発行される公開 URL を確認し、Webhook 用の URL として控える。
 - [x] Tunnel から api コンテナの HTTP ポートへ転送する設定を作る。
 - [x] 外部から /healthz へ到達できることを確認する。公開経路の基礎疎通確認として実施する。
-- [ ] 外部から /webhook へ到達できることを確認する。
+- [x] 外部から /webhook へ到達できることを確認する。
 
 ### Cloudflare 作業メモ
 
@@ -61,8 +61,8 @@ curl https://alive-bot.hacksaw.work/healthz
 #### 以降の手順
 
 - [x] Cloudflare Tunnel token を rotate する。過去にシェルへ直打ちした token は使い続けない。
-- [ ] API に `POST /webhook` を実装した状態をデプロイする。
-- [ ] 外部から `https://alive-bot.hacksaw.work/webhook` へ到達できることを確認する。
+- [x] API に `POST /webhook` を実装した状態をデプロイする。
+- [x] 外部から `https://alive-bot.hacksaw.work/webhook` へ到達できることを確認する。
 - [x] LINE Developers で Channel Access Token を発行し、安全な場所に保管する。
 - [x] LINE Developers の Webhook URL に `https://alive-bot.hacksaw.work/webhook` を設定する。
 - [x] Webhook の利用を有効化する。
@@ -75,7 +75,7 @@ curl https://alive-bot.hacksaw.work/healthz
 - [ ] 初期の送信時刻を決める。例: 09:00、12:00、18:00。
 - [ ] alert_after_hours の初期値を決める。例: 3。
 - [ ] Slack 通知先チャンネルを確定する。
-- [ ] Webhook 公開 URL を確定する。Cloudflare Tunnel の発行 URL に /webhook を付与した値を使う。
+- [x] Webhook 公開 URL を確定する。Cloudflare Tunnel の発行 URL に /webhook を付与した値を使う。
 - [ ] 本番用の環境変数一覧を埋める。少なくとも LINE の認証情報、Slack Webhook URL、公開 URL、タイムゾーンを整理する。
 
 ## 初回疎通確認

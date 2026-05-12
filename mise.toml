@@ -44,3 +44,45 @@ fi
 [tasks.build]
 description = "Build runtime containers"
 run = "docker compose build"
+
+[tasks.restart-container]
+description = "Restart a running project container selected via fzf"
+run = '''
+containers="$(docker compose ps --format json | python -c '
+import json
+import sys
+
+rows = []
+for raw_line in sys.stdin:
+  line = raw_line.strip()
+  if not line:
+    continue
+
+  container = json.loads(line)
+  if container.get("State") != "running":
+    continue
+
+  rows.append("\t".join([
+    container.get("Name", ""),
+    container.get("Service", ""),
+    container.get("Status", ""),
+  ]))
+
+if rows:
+  sys.stdout.write("\n".join(rows))
+')"
+
+if [ -z "$containers" ]; then
+  echo 'No running containers found for this project'
+  exit 1
+fi
+
+selected_container="$(printf '%s\n' "$containers" | fzf --delimiter='\t' --with-nth=1,2,3 --prompt='Restart container > ' --height=40% --reverse | cut -f1)"
+
+if [ -z "$selected_container" ]; then
+  echo 'Canceled'
+  exit 0
+fi
+
+docker restart "$selected_container"
+'''

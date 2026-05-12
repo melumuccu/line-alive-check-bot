@@ -20,7 +20,7 @@
 - [ ] 未返信監視処理を実装する。一定間隔で pending を走査し、alert_after_hours 超過を検知する。
 - [ ] Slack 通知処理を実装する。異常検知時に通知できるようにする。
 - [x] 安否確認履歴の参照 API を実装する。後から確認できるように一覧取得を用意する。
-- [ ] cloudflared を含む公開経路を構成する。Cloudflare Tunnel の発行 URL で Webhook を受けられるようにする。
+- [x] cloudflared を含む公開経路を構成する。Cloudflare Tunnel の発行 URL で Webhook を受けられるようにする。
 - [ ] Docker 前提の起動手順と設定手順を README などにまとめる。
 - [ ] テストを追加する。スケジュール判定、Webhook 検証、未返信アラート、Slack 通知の主要ケースを確認する。
 

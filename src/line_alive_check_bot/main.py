@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import json
+import logging
 import re
 import sqlite3
 
@@ -12,6 +13,7 @@ from . import db, line_messaging
 from .config import get_settings
 
 TIME_OF_DAY_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+logger = logging.getLogger("uvicorn.error")
 
 
 class MessageScheduleResponse(BaseModel):
@@ -209,6 +211,32 @@ def parse_line_webhook_payload(raw_body: bytes) -> dict[str, object]:
     return payload
 
 
+def log_line_webhook_events(payload: dict[str, object]) -> None:
+    for raw_event in payload["events"]:
+        if not isinstance(raw_event, dict):
+            continue
+
+        event_type = raw_event.get("type") if isinstance(raw_event.get("type"), str) else None
+        raw_source = raw_event.get("source")
+        source_type: str | None = None
+        source_user_id: str | None = None
+        if isinstance(raw_source, dict):
+            raw_source_type = raw_source.get("type")
+            if isinstance(raw_source_type, str):
+                source_type = raw_source_type
+
+            raw_user_id = raw_source.get("userId")
+            if isinstance(raw_user_id, str):
+                source_user_id = raw_user_id
+
+        logger.info(
+            "received LINE webhook event type=%s source_type=%s source_user_id=%s",
+            event_type,
+            source_type,
+            source_user_id,
+        )
+
+
 def get_app_setting_or_404(setting_key: str) -> sqlite3.Row:
     current_settings = get_settings()
     setting = db.get_app_setting(current_settings, setting_key)
@@ -282,6 +310,7 @@ async def receive_webhook(
         )
 
     payload = parse_line_webhook_payload(raw_body)
+    log_line_webhook_events(payload)
     postback_events = line_messaging.extract_postback_events(payload)
     return LineWebhookResponse(
         ok=True,
