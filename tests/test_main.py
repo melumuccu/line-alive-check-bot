@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import base64
+import hashlib
+import hmac
+import json
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 
 from line_alive_check_bot import db
 from line_alive_check_bot.config import Settings
@@ -15,10 +20,38 @@ from line_alive_check_bot.main import (
     delete_message_schedule,
     get_message_schedule,
     list_message_schedules,
+    receive_webhook,
     update_message_schedule,
     MessageScheduleCreateRequest,
     MessageScheduleUpdateRequest,
 )
+
+
+def build_request(body: bytes) -> Request:
+    async def receive() -> dict[str, object]:
+        return {
+            "type": "http.request",
+            "body": body,
+            "more_body": False,
+        }
+
+    return Request(
+        {
+            "type": "http",
+            "http_version": "1.1",
+            "method": "POST",
+            "path": "/webhook",
+            "headers": [],
+            "query_string": b"",
+        },
+        receive,
+    )
+
+
+def build_line_signature(channel_secret: str, body: bytes) -> str:
+    return base64.b64encode(
+        hmac.new(channel_secret.encode("utf-8"), body, hashlib.sha256).digest()
+    ).decode("utf-8")
 
 
 class MessageSchedulesApiTestCase(unittest.TestCase):
@@ -146,3 +179,71 @@ class MessageSchedulesValidationApiTestCase(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 422)
         self.assertEqual(context.exception.detail, "time_of_day must be in HH:MM format")
+
+
+class WebhookApiTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary_directory = TemporaryDirectory()
+        self.addCleanup(self.temporary_directory.cleanup)
+        self.settings = Settings(
+            database_path=Path(self.temporary_directory.name) / "app.db",
+            line_channel_secret="test-channel-secret",
+        )
+        db.init_db(self.settings)
+
+    def test_receive_webhook_accepts_valid_postback_event(self) -> None:
+        body = json.dumps(
+            {
+                "destination": "U1234567890",
+                "events": [
+                    {
+                        "type": "postback",
+                        "replyToken": "reply-token",
+                        "timestamp": 1715500000000,
+                        "source": {"type": "user", "userId": "U1234567890"},
+                        "postback": {
+                            "data": "action=confirm_check_in&check_in_id=42",
+                        },
+                    }
+                ],
+            }
+        ).encode("utf-8")
+        signature = build_line_signature(self.settings.line_channel_secret or "", body)
+
+        with patch("line_alive_check_bot.main.get_settings", return_value=self.settings):
+            response = asyncio.run(receive_webhook(build_request(body), signature))
+
+        self.assertTrue(response.ok)
+        self.assertEqual(response.events_received, 1)
+        self.assertEqual(response.postback_events_received, 1)
+
+    def test_receive_webhook_accepts_valid_verification_request(self) -> None:
+        body = json.dumps(
+            {
+                "destination": "U1234567890",
+                "events": [],
+            }
+        ).encode("utf-8")
+        signature = build_line_signature(self.settings.line_channel_secret or "", body)
+
+        with patch("line_alive_check_bot.main.get_settings", return_value=self.settings):
+            response = asyncio.run(receive_webhook(build_request(body), signature))
+
+        self.assertTrue(response.ok)
+        self.assertEqual(response.events_received, 0)
+        self.assertEqual(response.postback_events_received, 0)
+
+    def test_receive_webhook_rejects_invalid_signature(self) -> None:
+        body = json.dumps(
+            {
+                "destination": "U1234567890",
+                "events": [],
+            }
+        ).encode("utf-8")
+
+        with patch("line_alive_check_bot.main.get_settings", return_value=self.settings):
+            with self.assertRaises(HTTPException) as context:
+                asyncio.run(receive_webhook(build_request(body), "invalid-signature"))
+
+        self.assertEqual(context.exception.status_code, 401)
+        self.assertEqual(context.exception.detail, "invalid LINE signature")

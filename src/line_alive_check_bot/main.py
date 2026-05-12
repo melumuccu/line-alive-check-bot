@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import json
 import re
 import sqlite3
 
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import db
+from . import db, line_messaging
 from .config import get_settings
 
 TIME_OF_DAY_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
@@ -68,6 +69,12 @@ class CheckInResponse(BaseModel):
     sent_at: str | None
     replied_at: str | None
     status: str
+
+
+class LineWebhookResponse(BaseModel):
+    ok: bool
+    events_received: int
+    postback_events_received: int
 
 
 def serialize_message_schedule(schedule: sqlite3.Row) -> MessageScheduleResponse:
@@ -184,6 +191,24 @@ def normalize_days_of_week(days_of_week: str) -> str:
     return normalized_days
 
 
+def parse_line_webhook_payload(raw_body: bytes) -> dict[str, object]:
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="invalid LINE webhook payload",
+        ) from exc
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("events"), list):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="invalid LINE webhook payload",
+        )
+
+    return payload
+
+
 def get_app_setting_or_404(setting_key: str) -> sqlite3.Row:
     current_settings = get_settings()
     setting = db.get_app_setting(current_settings, setting_key)
@@ -225,6 +250,44 @@ def healthcheck() -> dict[str, object]:
         "database_path": str(current_settings.database_path),
         "timezone": current_settings.timezone,
     }
+
+
+@app.post("/webhook", response_model=LineWebhookResponse)
+async def receive_webhook(
+    request: Request,
+    x_line_signature: str | None = Header(default=None, alias="X-Line-Signature"),
+) -> LineWebhookResponse:
+    current_settings = get_settings()
+    if not current_settings.line_channel_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="APP_LINE_CHANNEL_SECRET is not configured",
+        )
+
+    if x_line_signature is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="X-Line-Signature header is required",
+        )
+
+    raw_body = await request.body()
+    if not line_messaging.validate_webhook_signature(
+        current_settings.line_channel_secret,
+        raw_body,
+        x_line_signature,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid LINE signature",
+        )
+
+    payload = parse_line_webhook_payload(raw_body)
+    postback_events = line_messaging.extract_postback_events(payload)
+    return LineWebhookResponse(
+        ok=True,
+        events_received=len(payload["events"]),
+        postback_events_received=len(postback_events),
+    )
 
 
 @app.get("/admin/check-ins", response_model=list[CheckInResponse])

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import json
 import unittest
 from pathlib import Path
@@ -10,7 +13,9 @@ from line_alive_check_bot.config import Settings
 from line_alive_check_bot.line_messaging import (
     build_check_in_flex_message,
     build_check_in_postback_data,
+    extract_postback_events,
     send_check_in_message,
+    validate_webhook_signature,
 )
 
 
@@ -62,6 +67,44 @@ class LineMessagingTestCase(unittest.TestCase):
         self.assertEqual(button_action["type"], "postback")
         self.assertEqual(button_action["label"], "無事です")
         self.assertEqual(button_action["data"], "action=confirm_check_in&check_in_id=42")
+
+    def test_validate_webhook_signature_accepts_valid_signature(self) -> None:
+        body = b'{"destination":"U1234567890","events":[]}'
+        signature = base64.b64encode(
+            hmac.new(b"test-channel-secret", body, hashlib.sha256).digest()
+        ).decode("utf-8")
+
+        self.assertTrue(validate_webhook_signature("test-channel-secret", body, signature))
+        self.assertFalse(validate_webhook_signature("test-channel-secret", body, "invalid"))
+
+    def test_extract_postback_events_returns_parsed_postback_data(self) -> None:
+        postback_events = extract_postback_events(
+            {
+                "events": [
+                    {
+                        "type": "message",
+                        "message": {"type": "text", "text": "ignore"},
+                    },
+                    {
+                        "type": "postback",
+                        "replyToken": "reply-token",
+                        "timestamp": 1715500000000,
+                        "source": {"type": "user", "userId": "U1234567890"},
+                        "postback": {
+                            "data": "action=confirm_check_in&check_in_id=42",
+                        },
+                    },
+                ]
+            }
+        )
+
+        self.assertEqual(len(postback_events), 1)
+        self.assertEqual(postback_events[0].reply_token, "reply-token")
+        self.assertEqual(postback_events[0].source_user_id, "U1234567890")
+        self.assertEqual(
+            postback_events[0].data_params,
+            {"action": "confirm_check_in", "check_in_id": "42"},
+        )
 
     def test_send_check_in_message_posts_line_push_payload(self) -> None:
         captured: dict[str, object] = {}

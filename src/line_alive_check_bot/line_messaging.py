@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from base64 import b64encode
+from dataclasses import dataclass
+import hashlib
+import hmac
 import json
 from collections.abc import Mapping
 from datetime import datetime
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import parse_qsl, urlencode
 from urllib.request import Request, urlopen
 
 from .config import Settings
@@ -18,6 +22,15 @@ class LineMessagingError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True, slots=True)
+class LinePostbackEvent:
+    reply_token: str | None
+    data: str
+    data_params: dict[str, str]
+    source_user_id: str | None
+    timestamp: int | None
+
+
 def build_check_in_postback_data(check_in_id: int) -> str:
     return urlencode(
         {
@@ -25,6 +38,58 @@ def build_check_in_postback_data(check_in_id: int) -> str:
             "check_in_id": str(check_in_id),
         }
     )
+
+
+def validate_webhook_signature(channel_secret: str, body: bytes, signature: str) -> bool:
+    expected_signature = b64encode(
+        hmac.new(channel_secret.encode("utf-8"), body, hashlib.sha256).digest()
+    ).decode("utf-8")
+    return hmac.compare_digest(expected_signature, signature.strip())
+
+
+def parse_postback_data(data: str) -> dict[str, str]:
+    return dict(parse_qsl(data, keep_blank_values=True))
+
+
+def extract_postback_events(payload: Mapping[str, object]) -> list[LinePostbackEvent]:
+    raw_events = payload.get("events")
+    if not isinstance(raw_events, list):
+        return []
+
+    postback_events: list[LinePostbackEvent] = []
+    for raw_event in raw_events:
+        if not isinstance(raw_event, Mapping) or raw_event.get("type") != "postback":
+            continue
+
+        raw_postback = raw_event.get("postback")
+        if not isinstance(raw_postback, Mapping):
+            continue
+
+        data = raw_postback.get("data")
+        if not isinstance(data, str):
+            continue
+
+        reply_token = raw_event.get("replyToken")
+        raw_source = raw_event.get("source")
+        source_user_id: str | None = None
+        if isinstance(raw_source, Mapping):
+            raw_user_id = raw_source.get("userId")
+            if isinstance(raw_user_id, str):
+                source_user_id = raw_user_id
+
+        raw_timestamp = raw_event.get("timestamp")
+        timestamp = raw_timestamp if isinstance(raw_timestamp, int) else None
+        postback_events.append(
+            LinePostbackEvent(
+                reply_token=reply_token if isinstance(reply_token, str) else None,
+                data=data,
+                data_params=parse_postback_data(data),
+                source_user_id=source_user_id,
+                timestamp=timestamp,
+            )
+        )
+
+    return postback_events
 
 
 def format_scheduled_at(scheduled_at_value: str) -> str:
