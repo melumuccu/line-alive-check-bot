@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     line_channel_access_token: str | None = None
     line_channel_secret: str | None = None
     line_user_id: str | None = None
+    slack_webhook_url: str | None = None
     scheduler_poll_seconds: int = 60
     timezone: str = "Asia/Tokyo"
 

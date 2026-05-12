@@ -17,8 +17,8 @@
 - [x] LINE メッセージ送信処理を実装する。Flex Message と postback データを組み立てて送信する。
 - [x] POST /webhook を実装する。X-Line-Signature の検証と postback 受信を行う。
 - [x] 返信処理を実装する。対象 check_ins を success に更新する。
-- [ ] 未返信監視処理を実装する。一定間隔で pending を走査し、alert_after_hours 超過を検知する。
-- [ ] Slack 通知処理を実装する。異常検知時に通知できるようにする。
+- [x] 未返信監視処理を実装する。一定間隔で pending を走査し、alert_after_hours 超過を検知する。
+- [x] Slack 通知処理を実装する。異常検知時に通知できるようにする。
 - [x] 安否確認履歴の参照 API を実装する。後から確認できるように一覧取得を用意する。
 - [x] cloudflared を含む公開経路を構成する。Cloudflare Tunnel の発行 URL で Webhook を受けられるようにする。
 - [ ] Docker 前提の起動手順と設定手順を README などにまとめる。

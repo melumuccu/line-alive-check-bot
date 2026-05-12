@@ -180,6 +180,63 @@ def mark_check_in_success(settings: Settings, check_in_id: int, replied_at: date
     return updated.rowcount > 0
 
 
+def list_pending_check_ins(settings: Settings) -> list[sqlite3.Row]:
+    with get_connection(settings) as connection:
+        return connection.execute(
+            """
+            SELECT
+                check_ins.id,
+                check_ins.schedule_id,
+                message_schedules.label AS schedule_label,
+                message_schedules.time_of_day AS schedule_time_of_day,
+                check_ins.scheduled_at,
+                check_ins.sent_at,
+                check_ins.replied_at,
+                check_ins.status
+            FROM check_ins
+            INNER JOIN message_schedules ON message_schedules.id = check_ins.schedule_id
+            WHERE check_ins.status = 'pending' AND check_ins.sent_at IS NOT NULL
+            ORDER BY check_ins.sent_at ASC, check_ins.id ASC
+            """
+        ).fetchall()
+
+
+def mark_check_in_alert(settings: Settings, check_in_id: int) -> sqlite3.Row | None:
+    with get_connection(settings) as connection:
+        updated = connection.execute(
+            """
+            UPDATE check_ins
+            SET status = 'alert'
+            WHERE id = ? AND status = 'pending' AND replied_at IS NULL
+            """,
+            (check_in_id,),
+        )
+        if updated.rowcount == 0:
+            connection.commit()
+            return None
+
+        check_in = connection.execute(
+            """
+            SELECT
+                check_ins.id,
+                check_ins.schedule_id,
+                message_schedules.label AS schedule_label,
+                message_schedules.time_of_day AS schedule_time_of_day,
+                check_ins.scheduled_at,
+                check_ins.sent_at,
+                check_ins.replied_at,
+                check_ins.status
+            FROM check_ins
+            INNER JOIN message_schedules ON message_schedules.id = check_ins.schedule_id
+            WHERE check_ins.id = ?
+            """,
+            (check_in_id,),
+        ).fetchone()
+        connection.commit()
+
+    return check_in
+
+
 def list_check_ins(settings: Settings) -> list[sqlite3.Row]:
     with get_connection(settings) as connection:
         return connection.execute(
