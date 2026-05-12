@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import datetime
 import json
 import logging
 import re
 import sqlite3
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -237,6 +239,30 @@ def log_line_webhook_events(payload: dict[str, object]) -> None:
         )
 
 
+def apply_check_in_postback_events(
+    current_settings,
+    postback_events: list[line_messaging.LinePostbackEvent],
+) -> None:
+    replied_at = datetime.now(ZoneInfo(current_settings.timezone)).replace(microsecond=0)
+
+    for postback_event in postback_events:
+        if postback_event.data_params.get("action") != "confirm_check_in":
+            continue
+
+        raw_check_in_id = postback_event.data_params.get("check_in_id")
+        if raw_check_in_id is None:
+            logger.warning("skipped LINE postback without check_in_id")
+            continue
+
+        try:
+            check_in_id = int(raw_check_in_id)
+        except ValueError:
+            logger.warning("skipped LINE postback with invalid check_in_id=%s", raw_check_in_id)
+            continue
+
+        db.mark_check_in_success(current_settings, check_in_id, replied_at)
+
+
 def get_app_setting_or_404(setting_key: str) -> sqlite3.Row:
     current_settings = get_settings()
     setting = db.get_app_setting(current_settings, setting_key)
@@ -312,6 +338,7 @@ async def receive_webhook(
     payload = parse_line_webhook_payload(raw_body)
     log_line_webhook_events(payload)
     postback_events = line_messaging.extract_postback_events(payload)
+    apply_check_in_postback_events(current_settings, postback_events)
     return LineWebhookResponse(
         ok=True,
         events_received=len(payload["events"]),

@@ -192,6 +192,23 @@ class WebhookApiTestCase(unittest.TestCase):
         db.init_db(self.settings)
 
     def test_receive_webhook_accepts_valid_postback_event(self) -> None:
+        with db.get_connection(self.settings) as connection:
+            connection.execute(
+                """
+                INSERT INTO check_ins(id, schedule_id, scheduled_at, sent_at, replied_at, status)
+                VALUES(?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    42,
+                    1,
+                    "2026-05-11T09:00",
+                    "2026-05-11T09:00:05",
+                    None,
+                    "pending",
+                ),
+            )
+            connection.commit()
+
         body = json.dumps(
             {
                 "destination": "U1234567890",
@@ -216,6 +233,20 @@ class WebhookApiTestCase(unittest.TestCase):
         self.assertTrue(response.ok)
         self.assertEqual(response.events_received, 1)
         self.assertEqual(response.postback_events_received, 1)
+
+        with db.get_connection(self.settings) as connection:
+            stored_check_in = connection.execute(
+                """
+                SELECT replied_at, status
+                FROM check_ins
+                WHERE id = ?
+                """,
+                (42,),
+            ).fetchone()
+
+        self.assertIsNotNone(stored_check_in)
+        self.assertEqual(stored_check_in["status"], "success")
+        self.assertIsNotNone(stored_check_in["replied_at"])
 
     def test_receive_webhook_logs_event_type_and_source_user_id(self) -> None:
         body = json.dumps(

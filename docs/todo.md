@@ -16,7 +16,7 @@
 - [x] 重複送信防止を実装する。同一 schedule_id と同一日付で check_ins を重複作成しないようにする。
 - [x] LINE メッセージ送信処理を実装する。Flex Message と postback データを組み立てて送信する。
 - [x] POST /webhook を実装する。X-Line-Signature の検証と postback 受信を行う。
-- [ ] 返信処理を実装する。対象 check_ins を success に更新し、確認メッセージを返す。
+- [x] 返信処理を実装する。対象 check_ins を success に更新する。
 - [ ] 未返信監視処理を実装する。一定間隔で pending を走査し、alert_after_hours 超過を検知する。
 - [ ] Slack 通知処理を実装する。異常検知時に通知できるようにする。
 - [x] 安否確認履歴の参照 API を実装する。後から確認できるように一覧取得を用意する。

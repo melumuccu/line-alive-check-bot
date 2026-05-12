@@ -163,6 +163,23 @@ def mark_check_in_sent(settings: Settings, check_in_id: int, sent_at: datetime) 
     return updated.rowcount > 0
 
 
+def mark_check_in_success(settings: Settings, check_in_id: int, replied_at: datetime) -> bool:
+    replied_at_iso = replied_at.isoformat(timespec="seconds")
+
+    with get_connection(settings) as connection:
+        updated = connection.execute(
+            """
+            UPDATE check_ins
+            SET replied_at = ?, status = 'success'
+            WHERE id = ? AND replied_at IS NULL AND status IN ('pending', 'alert')
+            """,
+            (replied_at_iso, check_in_id),
+        )
+        connection.commit()
+
+    return updated.rowcount > 0
+
+
 def list_check_ins(settings: Settings) -> list[sqlite3.Row]:
     with get_connection(settings) as connection:
         return connection.execute(

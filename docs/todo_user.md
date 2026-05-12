@@ -66,7 +66,7 @@ curl https://alive-bot.hacksaw.work/healthz
 - [x] LINE Developers で Channel Access Token を発行し、安全な場所に保管する。
 - [x] LINE Developers の Webhook URL に `https://alive-bot.hacksaw.work/webhook` を設定する。
 - [x] Webhook の利用を有効化する。
-- [ ] LINE Developers の Webhook 検証を実行し、成功することを確認する。
+- [x] LINE Developers の Webhook 検証を実行し、成功することを確認する。
 - [ ] Slack 通知文面、初期の送信時刻、`alert_after_hours`、本番用の環境変数一覧を確定する。
 - [ ] 初回疎通確認の 4 項目を順に実施する。
 
@@ -80,9 +80,9 @@ curl https://alive-bot.hacksaw.work/healthz
 
 ## 初回疎通確認
 
-- [ ] LINE Developers の Webhook 検証を実行し、成功することを確認する。
+- [x] LINE Developers の Webhook 検証を実行し、成功することを確認する。
 - [ ] 手動で安否確認メッセージを送信し、対象者の LINE に届くことを確認する。
-- [ ] ボタン押下後に success へ更新され、確認メッセージが返ることを確認する。
+- [ ] ボタン押下後に success へ更新されることを確認する。
 - [ ] 未返信状態を意図的に作り、Slack にアラートが届くことを確認する。
 
 ## 運用開始前の確認
