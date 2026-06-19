@@ -37,6 +37,8 @@ services:
     command:
       - tunnel
       - --no-autoupdate
+      - --protocol
+      - http2 # =TCP (長期接続前提のため、UDPセッション切れを根本から回避する狙い)
       - run
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
