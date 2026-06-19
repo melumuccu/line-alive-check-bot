@@ -16,16 +16,6 @@ services:
       APP_LINE_CHANNEL_SECRET: ${APP_LINE_CHANNEL_SECRET:-}
       APP_LINE_USER_ID: ${APP_LINE_USER_ID:-}
       APP_SLACK_WEBHOOK_URL: ${APP_SLACK_WEBHOOK_URL:-}
-    healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz').read()
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
     ports:
       - 8000:8000
     volumes:
@@ -52,7 +42,7 @@ services:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       api:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
 volumes:

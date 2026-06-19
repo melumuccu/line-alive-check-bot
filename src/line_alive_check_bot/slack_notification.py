@@ -17,8 +17,11 @@ class SlackNotificationError(RuntimeError):
 
 
 def build_alert_payload(check_in: Mapping[str, object]) -> dict[str, object]:
+    target_user_id = "U03LB2GQ09J"
+
     return {
-        "text": "反応がありません。確認連絡を推奨します。",
+        # <@メンバーID> の形式にすることでSlack上でメンションとして展開されます
+        "text": f"<@{target_user_id}> 反応がありません。確認連絡を推奨します。",
     }
 
 

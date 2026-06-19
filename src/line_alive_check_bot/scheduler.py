@@ -87,12 +87,13 @@ def process_overdue_check_ins(settings, now: datetime) -> int:
 
         notified_count += 1
 
-    logger.info(
-        "processed %s overdue check-ins and sent %s Slack alerts at %s",
-        alerted_count,
-        notified_count,
-        now.isoformat(timespec="minutes"),
-    )
+    if alerted_count > 0 or notified_count > 0:
+        logger.info(
+            "processed %s overdue check-ins and sent %s Slack alerts at %s",
+            alerted_count,
+            notified_count,
+            now.isoformat(timespec="minutes"),
+        )
     return alerted_count
 
 
@@ -122,12 +123,13 @@ def run_once() -> int:
 
     process_overdue_check_ins(settings, now)
 
-    logger.info(
-        "processed %s due check-ins and sent %s LINE messages at %s",
-        len(queued_check_ins),
-        sent_count,
-        now.isoformat(timespec="minutes"),
-    )
+    if len(queued_check_ins) > 0 or sent_count > 0:
+        logger.info(
+            "processed %s due check-ins and sent %s LINE messages at %s",
+            len(queued_check_ins),
+            sent_count,
+            now.isoformat(timespec="minutes"),
+        )
     return sent_count
 
 
