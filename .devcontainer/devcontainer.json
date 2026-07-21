@@ -7,7 +7,7 @@
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin:/home/vscode/.local/share/mise/shims"
   },
-  "postCreateCommand": "bash -lc 'if ! command -v mise >/dev/null 2>&1; then curl https://mise.run | sh; fi; export PATH=\"$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH\"; cd ${containerWorkspaceFolder}; mise trust; mise install; mise run install; python -m pre_commit install'",
+  "postCreateCommand": "bash -lc 'if ! command -v mise >/dev/null 2>&1; then curl https://mise.run | sh; fi; export PATH=\"$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH\"; cd ${containerWorkspaceFolder}; mise trust; mise install; mise run install; mise run hooks-install'",
   "customizations": {
     "vscode": {
       "extensions": [

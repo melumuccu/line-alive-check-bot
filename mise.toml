@@ -2,12 +2,14 @@
 python = "3.12"
 node = "22"
 pnpm = "10.11.0"
+pre-commit = "4.6.0"
+gitleaks = "8.30.1"
 
 [tasks.install]
 description = "Install backend and workspace dependencies"
 run = """
 python -m pip install --upgrade pip
-python -m pip install -e . pre-commit
+python -m pip install -e .
 pnpm install
 """
 
@@ -44,6 +46,25 @@ fi
 [tasks.build]
 description = "Build runtime containers"
 run = "docker compose build"
+
+[tasks.hooks-install]
+description = "Install pre-commit and pre-push git hooks"
+run = """
+pre-commit install
+pre-commit install --hook-type pre-push
+"""
+
+[tasks.hooks-validate]
+description = "Validate pre-commit hook configuration"
+run = "pre-commit validate-config"
+
+[tasks.hooks-run-pre-commit]
+description = "Run pre-commit stage hooks manually"
+run = "pre-commit run --hook-stage pre-commit"
+
+[tasks.hooks-run-pre-push]
+description = "Run pre-push stage hooks manually"
+run = "pre-commit run --hook-stage pre-push"
 
 [tasks.restart-container]
 description = "Restart a running project container selected via fzf"
